@@ -1,17 +1,17 @@
-# scarf-py
+# scarf
 
 Python bindings for [Scarf](https://scarf.sh) telemetry. This package provides a simple and ergonomic way to send telemetry events to Scarf.
 
 ## Installation
 
 ```bash
-pip install scarf-py
+pip install scarf
 ```
 
 ## Usage
 
 ```python
-from scarf_py import ScarfEventLogger
+from scarf import ScarfEventLogger
 
 # Initialize the logger with your API key
 logger = ScarfEventLogger(api_key="your-api-key")

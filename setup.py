@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="scarf-py",
+    name="scarf",
     version="0.1.0",
     author="Scarf",
     author_email="engineering@scarf.sh",

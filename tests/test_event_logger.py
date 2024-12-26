@@ -1,5 +1,5 @@
 import unittest
-from scarf_py import ScarfEventLogger
+from scarf import ScarfEventLogger
 
 class TestScarfEventLogger(unittest.TestCase):
     def test_initialization(self):
