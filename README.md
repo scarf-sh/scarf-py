@@ -1,4 +1,4 @@
-# scarf
+# Scarf-py
 
 Python bindings for [Scarf](https://scarf.sh) telemetry. This package provides a simple and ergonomic way to send telemetry events to Scarf.
 
