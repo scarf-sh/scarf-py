@@ -67,16 +67,22 @@ class TestScarfEventLogger(unittest.TestCase):
                 logger._validate_properties(props)
             self.assertIn(key, str(cm.exception))
             self.assertIn("simple types are allowed", str(cm.exception))
-            
-    def test_event_type_validation(self):
-        """Test that event_type must be a string."""
-        logger = ScarfEventLogger(api_key="test-api-key")
+
+    @patch('requests.Session')
+    def test_empty_properties_allowed(self, mock_session):
+        """Test that empty properties dictionary is allowed."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"status": "success"}
+        mock_session.return_value.post.return_value = mock_response
         
-        invalid_types = [42, 3.14, True, None, [], {}]
-        for invalid_type in invalid_types:
-            with self.assertRaises(ValueError) as cm:
-                logger.log_event(invalid_type)
-            self.assertEqual(str(cm.exception), "event_type must be a string")
+        logger = ScarfEventLogger(api_key="test-api-key")
+        result = logger.log_event({})
+        
+        self.assertEqual(result, {"status": "success"})
+        mock_session.return_value.post.assert_called_with(
+            'https://scarf.sh/api/v1',
+            params={}
+        )
 
     def test_check_do_not_track(self):
         """Test the do-not-track pure function with various environment values."""
@@ -131,17 +137,22 @@ class TestScarfEventLogger(unittest.TestCase):
             ('', False),
         ]
         
+        test_properties = {'event': 'test', 'value': 42}
+        
         for value, expected in test_cases:
             os.environ['DO_NOT_TRACK'] = value
             logger = ScarfEventLogger(api_key="test-api-key")
-            result = logger.log_event("test_event")
+            result = logger.log_event(test_properties)
             
             if expected:
                 self.assertIsNone(result)
                 mock_session.return_value.post.assert_not_called()
             else:
                 self.assertEqual(result, {"status": "success"})
-                mock_session.return_value.post.assert_called()
+                mock_session.return_value.post.assert_called_with(
+                    'https://scarf.sh/api/v1',
+                    params=test_properties
+                )
             
             # Reset mock for next iteration
             mock_session.return_value.post.reset_mock()
@@ -163,17 +174,22 @@ class TestScarfEventLogger(unittest.TestCase):
             ('', False),
         ]
         
+        test_properties = {'event': 'test', 'value': 42}
+        
         for value, expected in test_cases:
             os.environ['SCARF_NO_ANALYTICS'] = value
             logger = ScarfEventLogger(api_key="test-api-key")
-            result = logger.log_event("test_event")
+            result = logger.log_event(test_properties)
             
             if expected:
                 self.assertIsNone(result)
                 mock_session.return_value.post.assert_not_called()
             else:
                 self.assertEqual(result, {"status": "success"})
-                mock_session.return_value.post.assert_called()
+                mock_session.return_value.post.assert_called_with(
+                    'https://scarf.sh/api/v1',
+                    params=test_properties
+                )
             
             # Reset mock for next iteration
             mock_session.return_value.post.reset_mock()
@@ -190,7 +206,7 @@ class TestScarfEventLogger(unittest.TestCase):
         os.environ['SCARF_NO_ANALYTICS'] = 'true'
         logger = ScarfEventLogger(api_key="test-api-key")
         
-        result = logger.log_event("test_event")
+        result = logger.log_event({'event': 'test'})
         self.assertIsNone(result)
         mock_session.return_value.post.assert_not_called()
 

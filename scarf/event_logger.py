@@ -1,8 +1,6 @@
-import json
 import os
 import requests
-from typing import Dict, Any, Optional, Union
-from urllib.parse import urlencode
+from typing import Dict, Any, Optional
 
 class ScarfEventLogger:
     """A client for sending telemetry events to Scarf."""
@@ -54,13 +52,13 @@ class ScarfEventLogger:
                     f"Only simple types are allowed: {', '.join(t.__name__ for t in self.SIMPLE_TYPES)}"
                 )
 
-    def log_event(self, event_type: str, properties: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    def log_event(self, properties: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Log a telemetry event to Scarf.
         
         Args:
-            event_type: The type of event being logged
-            properties: Additional properties to include with the event (optional).
+            properties: Properties to include with the event.
                        All values must be simple types (str, int, float, bool, None).
+                       For example: {'event': 'package_download', 'package': 'scarf', 'version': '1.0.0'}
             
         Returns:
             The response from the Scarf API as a dictionary, or None if analytics are disabled
@@ -72,17 +70,12 @@ class ScarfEventLogger:
         if self._check_do_not_track():
             return None
             
-        if not isinstance(event_type, str):
-            raise ValueError("event_type must be a string")
-            
-        params = {'type': event_type}
         if properties:
             self._validate_properties(properties)
-            params.update(properties)
         
         response = self.session.post(
-            f'{self.base_url}/events',
-            params=params
+            f'{self.base_url}',
+            params=properties
         )
         response.raise_for_status()
         return response.json()
