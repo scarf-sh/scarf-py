@@ -6,16 +6,19 @@ class ScarfEventLogger:
     """A client for sending telemetry events to Scarf."""
     
     SIMPLE_TYPES = (str, int, float, bool, type(None))
+    DEFAULT_TIMEOUT = 3.0  # 3 seconds
     
-    def __init__(self, api_key: str, base_url: str = "https://scarf.sh/api/v1"):
+    def __init__(self, api_key: str, base_url: str = "https://scarf.sh/api/v1", timeout: Optional[float] = None):
         """Initialize the Scarf event logger.
         
         Args:
             api_key: Your Scarf API key
             base_url: The base URL for the Scarf API (optional)
+            timeout: Default timeout in seconds for API calls (optional, default: 3.0)
         """
         self.api_key = api_key
         self.base_url = base_url.rstrip('/')
+        self.timeout = timeout if timeout is not None else self.DEFAULT_TIMEOUT
         self.session = requests.Session()
         self.session.headers.update({
             'Authorization': f'Bearer {api_key}',
@@ -52,20 +55,22 @@ class ScarfEventLogger:
                     f"Only simple types are allowed: {', '.join(t.__name__ for t in self.SIMPLE_TYPES)}"
                 )
 
-    def log_event(self, properties: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def log_event(self, properties: Dict[str, Any], timeout: Optional[float] = None) -> Optional[Dict[str, Any]]:
         """Log a telemetry event to Scarf.
         
         Args:
             properties: Properties to include with the event.
                        All values must be simple types (str, int, float, bool, None).
                        For example: {'event': 'package_download', 'package': 'scarf', 'version': '1.0.0'}
+            timeout: Optional timeout in seconds for this specific API call.
+                    Overrides the default timeout set in the constructor.
             
         Returns:
             The response from the Scarf API as a dictionary, or None if analytics are disabled
             
         Raises:
             ValueError: If any property value is not a simple type
-            requests.exceptions.RequestException: If the request fails
+            requests.exceptions.RequestException: If the request fails or times out
         """
         if self._check_do_not_track():
             return None
@@ -75,7 +80,8 @@ class ScarfEventLogger:
         
         response = self.session.post(
             f'{self.base_url}',
-            params=properties
+            params=properties,
+            timeout=timeout if timeout is not None else self.timeout
         )
         response.raise_for_status()
         return response.json()

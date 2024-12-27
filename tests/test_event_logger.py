@@ -1,6 +1,8 @@
 import unittest
 import os
+import time
 from unittest.mock import patch, MagicMock
+from requests.exceptions import Timeout, ReadTimeout
 from scarf import ScarfEventLogger
 
 class TestScarfEventLogger(unittest.TestCase):
@@ -31,6 +33,12 @@ class TestScarfEventLogger(unittest.TestCase):
         self.assertIsInstance(logger, ScarfEventLogger)
         self.assertEqual(logger.api_key, "test-api-key")
         self.assertEqual(logger.base_url, "https://scarf.sh/api/v1")
+        self.assertEqual(logger.timeout, ScarfEventLogger.DEFAULT_TIMEOUT)
+
+    def test_custom_timeout(self):
+        """Test that we can initialize with a custom timeout."""
+        logger = ScarfEventLogger(api_key="test-api-key", timeout=5.0)
+        self.assertEqual(logger.timeout, 5.0)
 
     def test_custom_base_url(self):
         """Test that we can initialize with a custom base URL."""
@@ -81,7 +89,41 @@ class TestScarfEventLogger(unittest.TestCase):
         self.assertEqual(result, {"status": "success"})
         mock_session.return_value.post.assert_called_with(
             'https://scarf.sh/api/v1',
-            params={}
+            params={},
+            timeout=3.0
+        )
+
+    @patch('requests.Session')
+    def test_request_timeout(self, mock_session):
+        """Test that requests timeout after the specified duration."""
+        mock_session.return_value.post.side_effect = Timeout("Request timed out")
+        
+        logger = ScarfEventLogger(api_key="test-api-key", timeout=0.1)
+        
+        with self.assertRaises(Timeout):
+            logger.log_event({"event": "test"})
+            
+        mock_session.return_value.post.assert_called_with(
+            'https://scarf.sh/api/v1',
+            params={"event": "test"},
+            timeout=0.1
+        )
+
+    @patch('requests.Session')
+    def test_request_timeout_override(self, mock_session):
+        """Test that per-request timeout overrides the default."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"status": "success"}
+        mock_session.return_value.post.return_value = mock_response
+        
+        logger = ScarfEventLogger(api_key="test-api-key", timeout=3.0)
+        result = logger.log_event({"event": "test"}, timeout=1.0)
+        
+        self.assertEqual(result, {"status": "success"})
+        mock_session.return_value.post.assert_called_with(
+            'https://scarf.sh/api/v1',
+            params={"event": "test"},
+            timeout=1.0
         )
 
     def test_check_do_not_track(self):
@@ -151,7 +193,8 @@ class TestScarfEventLogger(unittest.TestCase):
                 self.assertEqual(result, {"status": "success"})
                 mock_session.return_value.post.assert_called_with(
                     'https://scarf.sh/api/v1',
-                    params=test_properties
+                    params=test_properties,
+                    timeout=3.0
                 )
             
             # Reset mock for next iteration
@@ -188,7 +231,8 @@ class TestScarfEventLogger(unittest.TestCase):
                 self.assertEqual(result, {"status": "success"})
                 mock_session.return_value.post.assert_called_with(
                     'https://scarf.sh/api/v1',
-                    params=test_properties
+                    params=test_properties,
+                    timeout=3.0
                 )
             
             # Reset mock for next iteration
@@ -209,6 +253,40 @@ class TestScarfEventLogger(unittest.TestCase):
         result = logger.log_event({'event': 'test'})
         self.assertIsNone(result)
         mock_session.return_value.post.assert_not_called()
+
+    @patch('requests.Session')
+    def test_request_timeout_behavior(self, mock_session):
+        """Test that requests actually time out after the specified duration."""
+        def mock_post(*args, **kwargs):
+            if kwargs.get('timeout', float('inf')) < 2:
+                raise ReadTimeout("Request timed out")
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"status": "success"}
+            return mock_response
+            
+        mock_session.return_value.post.side_effect = mock_post
+        
+        # Should timeout (1s timeout, requires 2s)
+        logger = ScarfEventLogger(api_key="test-api-key", timeout=1)
+        with self.assertRaises(ReadTimeout):
+            logger.log_event({"event": "test"})
+        
+        # Should succeed (3s timeout, requires 2s)
+        logger = ScarfEventLogger(api_key="test-api-key", timeout=3)
+        result = logger.log_event({"event": "test"})
+        self.assertEqual(result, {"status": "success"})
+        
+        # Should timeout with per-request override (3s default, 1s override)
+        logger = ScarfEventLogger(api_key="test-api-key", timeout=3)
+        with self.assertRaises(ReadTimeout):
+            logger.log_event({"event": "test"}, timeout=1)
+        
+        # Verify the last timeout value was passed correctly
+        mock_session.return_value.post.assert_called_with(
+            'https://scarf.sh/api/v1',
+            params={"event": "test"},
+            timeout=1
+        )
 
 if __name__ == '__main__':
     unittest.main() 
