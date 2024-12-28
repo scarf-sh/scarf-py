@@ -25,6 +25,11 @@ jobs:
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
         
+    - name: Create virtual environment
+      run: |
+        uv venv
+        source .venv/bin/activate
+        
     - name: Install dependencies
       run: |
         uv pip install -e ".[dev]"
@@ -32,8 +37,10 @@ jobs:
         
     - name: Lint with ruff
       run: |
+        source .venv/bin/activate
         ruff check .
         
     - name: Test with pytest
       run: |
+        source .venv/bin/activate
         pytest 
