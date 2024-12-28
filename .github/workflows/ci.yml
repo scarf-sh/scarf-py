@@ -32,7 +32,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        uv pip install -f "requirements-dev.txt"
+        uv pip install -r requirements-dev.txt
         uv pip install ruff pytest
         
     - name: Lint with ruff
