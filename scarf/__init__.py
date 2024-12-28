@@ -1,6 +1,6 @@
 """Python bindings for Scarf telemetry."""
 
 from .event_logger import ScarfEventLogger
+from .version import __version__
 
-__version__ = "0.1.0"
 __all__ = ["ScarfEventLogger"]

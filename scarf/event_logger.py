@@ -1,7 +1,7 @@
 import os
 import requests
 from typing import Dict, Any, Optional
-from . import __version__
+from .version import __version__
 
 class ScarfEventLogger:
     """A client for sending telemetry events to Scarf."""
