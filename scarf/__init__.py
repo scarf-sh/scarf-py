@@ -3,4 +3,4 @@
 from .event_logger import ScarfEventLogger
 from .version import __version__
 
-__all__ = ["ScarfEventLogger"]
+__all__ = ["ScarfEventLogger", "__version__"]

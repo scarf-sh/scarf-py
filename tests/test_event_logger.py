@@ -1,8 +1,11 @@
-import unittest
 import os
-from unittest.mock import patch, MagicMock
-from requests.exceptions import Timeout, ReadTimeout
+import unittest
+from unittest.mock import MagicMock, patch
+
+from requests.exceptions import ReadTimeout, Timeout
+
 from scarf import ScarfEventLogger
+
 
 class TestScarfEventLogger(unittest.TestCase):
     def setUp(self):
@@ -12,7 +15,7 @@ class TestScarfEventLogger(unittest.TestCase):
             'DO_NOT_TRACK': os.environ.get('DO_NOT_TRACK'),
             'SCARF_NO_ANALYTICS': os.environ.get('SCARF_NO_ANALYTICS')
         }
-        
+
         # Clear environment variables
         for var in ['DO_NOT_TRACK', 'SCARF_NO_ANALYTICS']:
             if var in os.environ:
@@ -44,11 +47,11 @@ class TestScarfEventLogger(unittest.TestCase):
         custom_url = "https://custom.scarf.sh/api/v1"
         logger = ScarfEventLogger(api_key="test-api-key", base_url=custom_url)
         self.assertEqual(logger.base_url, custom_url)
-        
+
     def test_validate_properties_simple_types(self):
         """Test that simple type properties are accepted."""
         logger = ScarfEventLogger(api_key="test-api-key")
-        
+
         # These should not raise any errors
         logger._validate_properties({
             'string': 'value',
@@ -57,18 +60,18 @@ class TestScarfEventLogger(unittest.TestCase):
             'bool': True,
             'none': None
         })
-        
+
     def test_validate_properties_complex_types(self):
         """Test that complex type properties are rejected."""
         logger = ScarfEventLogger(api_key="test-api-key")
-        
+
         invalid_properties = [
             ({'list': [1, 2, 3]}, "list"),
             ({'dict': {'key': 'value'}}, "dict"),
             ({'tuple': (1, 2)}, "tuple"),
             ({'set': {1, 2}}, "set"),
         ]
-        
+
         for props, key in invalid_properties:
             with self.assertRaises(ValueError) as cm:
                 logger._validate_properties(props)
@@ -81,10 +84,10 @@ class TestScarfEventLogger(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.json.return_value = {"status": "success"}
         mock_session.return_value.post.return_value = mock_response
-        
+
         logger = ScarfEventLogger(api_key="test-api-key")
         result = logger.log_event({})
-        
+
         self.assertTrue(result)
         mock_session.return_value.post.assert_called_with(
             'https://scarf.sh/api/v1',
@@ -96,12 +99,12 @@ class TestScarfEventLogger(unittest.TestCase):
     def test_request_timeout(self, mock_session):
         """Test that requests timeout after the specified duration."""
         mock_session.return_value.post.side_effect = Timeout("Request timed out")
-        
+
         logger = ScarfEventLogger(api_key="test-api-key", timeout=1)
-        
+
         with self.assertRaises(Timeout):
             logger.log_event({"event": "test"})
-            
+
         mock_session.return_value.post.assert_called_with(
             'https://scarf.sh/api/v1',
             params={"event": "test"},
@@ -114,10 +117,10 @@ class TestScarfEventLogger(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.json.return_value = {"status": "success"}
         mock_session.return_value.post.return_value = mock_response
-        
+
         logger = ScarfEventLogger(api_key="test-api-key", timeout=3.0)
         result = logger.log_event({"event": "test"}, timeout=1.0)
-        
+
         self.assertTrue(result)
         mock_session.return_value.post.assert_called_with(
             'https://scarf.sh/api/v1',
@@ -143,18 +146,18 @@ class TestScarfEventLogger(unittest.TestCase):
             ('false', 'true', True),
             ('true', 'false', True),
         ]
-        
+
         for dnt, sna, expected in test_cases:
             if dnt:
                 os.environ['DO_NOT_TRACK'] = dnt
             elif 'DO_NOT_TRACK' in os.environ:
                 del os.environ['DO_NOT_TRACK']
-                
+
             if sna:
                 os.environ['SCARF_NO_ANALYTICS'] = sna
             elif 'SCARF_NO_ANALYTICS' in os.environ:
                 del os.environ['SCARF_NO_ANALYTICS']
-            
+
             self.assertEqual(
                 ScarfEventLogger._check_do_not_track(),
                 expected,
@@ -168,7 +171,7 @@ class TestScarfEventLogger(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.json.return_value = {"status": "success"}
         mock_session.return_value.post.return_value = mock_response
-        
+
         test_cases = [
             ('1', True),
             ('true', True),
@@ -177,14 +180,14 @@ class TestScarfEventLogger(unittest.TestCase):
             ('false', False),
             ('', False),
         ]
-        
+
         test_properties = {'event': 'test', 'value': 42}
-        
+
         for value, expected in test_cases:
             os.environ['DO_NOT_TRACK'] = value
             logger = ScarfEventLogger(api_key="test-api-key")
             result = logger.log_event(test_properties)
-            
+
             if expected:
                 self.assertIsNone(result)
                 mock_session.return_value.post.assert_not_called()
@@ -195,7 +198,7 @@ class TestScarfEventLogger(unittest.TestCase):
                     params=test_properties,
                     timeout=3.0
                 )
-            
+
             # Reset mock for next iteration
             mock_session.return_value.post.reset_mock()
 
@@ -206,7 +209,7 @@ class TestScarfEventLogger(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.json.return_value = {"status": "success"}
         mock_session.return_value.post.return_value = mock_response
-        
+
         test_cases = [
             ('1', True),
             ('true', True),
@@ -215,14 +218,14 @@ class TestScarfEventLogger(unittest.TestCase):
             ('false', False),
             ('', False),
         ]
-        
+
         test_properties = {'event': 'test', 'value': 42}
-        
+
         for value, expected in test_cases:
             os.environ['SCARF_NO_ANALYTICS'] = value
             logger = ScarfEventLogger(api_key="test-api-key")
             result = logger.log_event(test_properties)
-            
+
             if expected:
                 self.assertIsNone(result)
                 mock_session.return_value.post.assert_not_called()
@@ -233,7 +236,7 @@ class TestScarfEventLogger(unittest.TestCase):
                     params=test_properties,
                     timeout=3.0
                 )
-            
+
             # Reset mock for next iteration
             mock_session.return_value.post.reset_mock()
 
@@ -244,11 +247,11 @@ class TestScarfEventLogger(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.json.return_value = {"status": "success"}
         mock_session.return_value.post.return_value = mock_response
-        
+
         os.environ['DO_NOT_TRACK'] = 'false'
         os.environ['SCARF_NO_ANALYTICS'] = 'true'
         logger = ScarfEventLogger(api_key="test-api-key")
-        
+
         result = logger.log_event({'event': 'test'})
         self.assertIsNone(result)
         mock_session.return_value.post.assert_not_called()
@@ -262,24 +265,24 @@ class TestScarfEventLogger(unittest.TestCase):
             mock_response = MagicMock()
             mock_response.json.return_value = {"status": "success"}
             return mock_response
-            
+
         mock_session.return_value.post.side_effect = mock_post
-        
+
         # Should timeout (1s timeout, requires 2s)
         logger = ScarfEventLogger(api_key="test-api-key", timeout=1)
         with self.assertRaises(ReadTimeout):
             logger.log_event({"event": "test"})
-        
+
         # Should succeed (3s timeout, requires 2s)
         logger = ScarfEventLogger(api_key="test-api-key", timeout=3)
         result = logger.log_event({"event": "test"})
         self.assertTrue(result)
-        
+
         # Should timeout with per-request override (3s default, 1s override)
         logger = ScarfEventLogger(api_key="test-api-key", timeout=3)
         with self.assertRaises(ReadTimeout):
             logger.log_event({"event": "test"}, timeout=1)
-        
+
         # Verify the last timeout value was passed correctly
         mock_session.return_value.post.assert_called_with(
             'https://scarf.sh/api/v1',
@@ -288,4 +291,4 @@ class TestScarfEventLogger(unittest.TestCase):
         )
 
 if __name__ == '__main__':
-    unittest.main() 
+    unittest.main()
