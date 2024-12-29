@@ -5,7 +5,7 @@ A Python client for sending telemetry events to Scarf.
 ## Installation
 
 ```bash
-pip install scarf
+pip install scarf-sdk
 ```
 
 ## Usage
@@ -42,13 +42,17 @@ The client can be configured through environment variables:
 
 - `DO_NOT_TRACK=1`: Disable analytics
 - `SCARF_NO_ANALYTICS=1`: Disable analytics (alternative)
+- `SCARF_VERBOSE=1`: Enable verbose logging
 
 ## Features
 
 - Simple API for sending telemetry events
 - Environment variable configuration
 - Configurable timeouts (default: 3 seconds)
-- Automatically reespects Do Not Track settings
+- Support for empty payloads
+- Automatic User-Agent header (`scarf-sdk/VERSION`)
+- Respects Do Not Track settings
+- Verbose logging mode for debugging
 
 ## Development
 
@@ -61,6 +65,19 @@ The client can be configured through environment variables:
    ```bash
    pytest
    ```
+
+## Publishing
+
+To publish a new version:
+
+1. Update version in `setup.py`
+2. Create and push a new tag:
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+
+The CI workflow will automatically build and publish to PyPI when a new version tag is pushed.
 
 ## License
 
