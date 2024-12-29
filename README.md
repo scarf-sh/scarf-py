@@ -49,9 +49,7 @@ The client can be configured through environment variables:
 - Simple API for sending telemetry events
 - Environment variable configuration
 - Configurable timeouts (default: 3 seconds)
-- Support for empty payloads
-- Automatic User-Agent header (`scarf-sdk/VERSION`)
-- Respects Do Not Track settings
+- Respects user Do Not Track settings
 - Verbose logging mode for debugging
 
 ## Development
