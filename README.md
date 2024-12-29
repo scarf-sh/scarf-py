@@ -70,7 +70,7 @@ The client can be configured through environment variables:
 
 To publish a new version:
 
-1. Update version in `setup.py`
+1. Update version in `setup.py` and `pyproject.toml`
 2. Create and push a new tag:
    ```bash
    git tag v0.1.0
