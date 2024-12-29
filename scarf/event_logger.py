@@ -44,7 +44,7 @@ class ScarfEventLogger:
         })
 
         if self.verbose:
-            print(f"Scarf Logger Configuration:")
+            print("Scarf Logger Configuration:")
             print(f"  Endpoint URL: {self.endpoint_url}")
             print(f"  Timeout: {self.timeout}s")
             print(f"  User-Agent: {self.session.headers['User-Agent']}")
