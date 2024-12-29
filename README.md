@@ -66,4 +66,4 @@ Analytics can be disabled by setting either of these environment variables:
 
 ## License
 
-MIT License 
+Apache 2.0
