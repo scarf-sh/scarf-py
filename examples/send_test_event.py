@@ -9,6 +9,9 @@ To run this example:
 
 2. Run this script:
    python examples/send_test_event.py
+
+Environment variables:
+    SCARF_VERBOSE=1: Enable verbose logging
 """
 
 from requests.exceptions import RequestException
@@ -18,9 +21,10 @@ from scarf import ScarfEventLogger
 
 def main():
     try:
-        # Initialize the logger with a test endpoint
+        # Initialize the logger with a test endpoint and verbose mode
         logger = ScarfEventLogger(
-            endpoint_url="https://avi.gateway.scarf.sh/test-scarf-py"
+            endpoint_url="https://avi.gateway.scarf.sh/test-scarf-py",
+            verbose=True  # Enable verbose logging
         )
 
         # Send a test event with two fields

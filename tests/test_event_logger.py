@@ -1,4 +1,5 @@
 import os
+import re
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -15,11 +16,12 @@ class TestScarfEventLogger(unittest.TestCase):
         # Store original environment variables
         self.original_env = {
             'DO_NOT_TRACK': os.environ.get('DO_NOT_TRACK'),
-            'SCARF_NO_ANALYTICS': os.environ.get('SCARF_NO_ANALYTICS')
+            'SCARF_NO_ANALYTICS': os.environ.get('SCARF_NO_ANALYTICS'),
+            'SCARF_VERBOSE': os.environ.get('SCARF_VERBOSE'),
         }
 
         # Clear environment variables
-        for var in ['DO_NOT_TRACK', 'SCARF_NO_ANALYTICS']:
+        for var in ['DO_NOT_TRACK', 'SCARF_NO_ANALYTICS', 'SCARF_VERBOSE']:
             if var in os.environ:
                 del os.environ[var]
 
@@ -37,6 +39,7 @@ class TestScarfEventLogger(unittest.TestCase):
         self.assertIsInstance(logger, ScarfEventLogger)
         self.assertEqual(logger.endpoint_url, self.DEFAULT_ENDPOINT)
         self.assertEqual(logger.timeout, ScarfEventLogger.DEFAULT_TIMEOUT)
+        self.assertFalse(logger.verbose)
 
     def test_initialization_validation(self):
         """Test that initialization fails with invalid endpoint_url."""
@@ -44,6 +47,30 @@ class TestScarfEventLogger(unittest.TestCase):
             ScarfEventLogger(endpoint_url="")
         with self.assertRaises(ValueError):
             ScarfEventLogger(endpoint_url=None)
+
+    def test_verbose_from_env(self):
+        """Test that verbose mode can be enabled via environment variable."""
+        os.environ['SCARF_VERBOSE'] = '1'
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
+        self.assertTrue(logger.verbose)
+
+        os.environ['SCARF_VERBOSE'] = 'true'
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
+        self.assertTrue(logger.verbose)
+
+        os.environ['SCARF_VERBOSE'] = '0'
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
+        self.assertFalse(logger.verbose)
+
+    def test_verbose_override(self):
+        """Test that verbose parameter overrides environment variable."""
+        os.environ['SCARF_VERBOSE'] = '1'
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT, verbose=False)
+        self.assertFalse(logger.verbose)
+
+        os.environ['SCARF_VERBOSE'] = '0'
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT, verbose=True)
+        self.assertTrue(logger.verbose)
 
     def test_custom_timeout(self):
         """Test that we can initialize with a custom timeout."""
@@ -297,6 +324,51 @@ class TestScarfEventLogger(unittest.TestCase):
             params={"event": "test"},
             timeout=1
         )
+
+    @patch('requests.Session')
+    @patch('builtins.print')
+    def test_verbose_output(self, mock_print, mock_session):
+        """Test that verbose mode logs the expected information."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.url = self.DEFAULT_ENDPOINT
+        mock_response.text = "Success"
+        mock_session.return_value.post.return_value = mock_response
+
+        logger = ScarfEventLogger(
+            endpoint_url=self.DEFAULT_ENDPOINT,
+            timeout=1.0,
+            verbose=True
+        )
+
+        # Check initialization logging
+        mock_print.assert_any_call("Scarf Logger Configuration:")
+        mock_print.assert_any_call(f"  Endpoint URL: {self.DEFAULT_ENDPOINT}")
+        mock_print.assert_any_call("  Timeout: 1.0s")
+
+        # Reset mock for event logging
+        mock_print.reset_mock()
+
+        # Log an event
+        test_properties = {"test": "value"}
+        logger.log_event(test_properties)
+
+        # Check event logging
+        mock_print.assert_any_call("\nSending event:")
+        mock_print.assert_any_call("  Properties: {'test': 'value'}")
+        mock_print.assert_any_call("  Timeout: 1.0s")
+
+        # Check response logging - using regex to match elapsed time
+        elapsed_pattern = re.compile(r"\nResponse received in \d+\.\d+s:")
+        elapsed_calls = [
+            call for call in mock_print.call_args_list
+            if call[0] and isinstance(call[0][0], str) and elapsed_pattern.match(call[0][0])
+        ]
+        self.assertEqual(len(elapsed_calls), 1, "Expected one elapsed time log")
+
+        mock_print.assert_any_call("  Status: 200")
+        mock_print.assert_any_call("  URL: https://scarf.sh/api/v1")
+        mock_print.assert_any_call("  Body: Success")
 
 if __name__ == '__main__':
     unittest.main()
