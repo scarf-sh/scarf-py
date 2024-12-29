@@ -16,6 +16,7 @@ To run this example:
 """
 
 import os
+
 from requests.exceptions import RequestException
 
 from scarf import ScarfEventLogger
