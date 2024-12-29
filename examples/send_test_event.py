@@ -4,18 +4,12 @@
 Example script for sending test events to Scarf.
 
 To run this example:
-1. Set environment variables:
-   export SCARF_API_KEY="your-api-key"
-   export SCARF_BASE_URL="https://avi.gateway.scarf.sh/test-scarf-py"  # Optional
-
-2. Install the package in development mode:
+1. Install the package in development mode:
    pip install -e .
 
-3. Run this script:
+2. Run this script:
    python examples/send_test_event.py
 """
-
-import os
 
 from requests.exceptions import RequestException
 
@@ -24,13 +18,10 @@ from scarf import ScarfEventLogger
 
 def main():
     try:
-        # Check for required environment variable
-        if not os.environ.get('SCARF_API_KEY'):
-            print("Error: SCARF_API_KEY environment variable is not set")
-            return 1
-
-        # Initialize the logger using environment variables
-        logger = ScarfEventLogger()
+        # Initialize the logger with a test endpoint
+        logger = ScarfEventLogger(
+            endpoint_url="https://avi.gateway.scarf.sh/test-scarf-py"
+        )
 
         # Send a test event with two fields
         success = logger.log_event({

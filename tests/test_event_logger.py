@@ -8,6 +8,8 @@ from scarf import ScarfEventLogger
 
 
 class TestScarfEventLogger(unittest.TestCase):
+    DEFAULT_ENDPOINT = "https://scarf.sh/api/v1"
+
     def setUp(self):
         """Reset environment variables before each test."""
         # Store original environment variables
@@ -31,26 +33,32 @@ class TestScarfEventLogger(unittest.TestCase):
 
     def test_initialization(self):
         """Test that we can create a ScarfEventLogger instance."""
-        logger = ScarfEventLogger(api_key="test-api-key")
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
         self.assertIsInstance(logger, ScarfEventLogger)
-        self.assertEqual(logger.api_key, "test-api-key")
-        self.assertEqual(logger.base_url, "https://scarf.sh/api/v1")
+        self.assertEqual(logger.endpoint_url, self.DEFAULT_ENDPOINT)
         self.assertEqual(logger.timeout, ScarfEventLogger.DEFAULT_TIMEOUT)
+
+    def test_initialization_validation(self):
+        """Test that initialization fails with invalid endpoint_url."""
+        with self.assertRaises(ValueError):
+            ScarfEventLogger(endpoint_url="")
+        with self.assertRaises(ValueError):
+            ScarfEventLogger(endpoint_url=None)
 
     def test_custom_timeout(self):
         """Test that we can initialize with a custom timeout."""
-        logger = ScarfEventLogger(api_key="test-api-key", timeout=5.0)
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT, timeout=5.0)
         self.assertEqual(logger.timeout, 5.0)
 
-    def test_custom_base_url(self):
-        """Test that we can initialize with a custom base URL."""
+    def test_custom_endpoint_url(self):
+        """Test that we can initialize with a custom endpoint URL."""
         custom_url = "https://custom.scarf.sh/api/v1"
-        logger = ScarfEventLogger(api_key="test-api-key", base_url=custom_url)
-        self.assertEqual(logger.base_url, custom_url)
+        logger = ScarfEventLogger(endpoint_url=custom_url)
+        self.assertEqual(logger.endpoint_url, custom_url)
 
     def test_validate_properties_simple_types(self):
         """Test that simple type properties are accepted."""
-        logger = ScarfEventLogger(api_key="test-api-key")
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
 
         # These should not raise any errors
         logger._validate_properties({
@@ -63,7 +71,7 @@ class TestScarfEventLogger(unittest.TestCase):
 
     def test_validate_properties_complex_types(self):
         """Test that complex type properties are rejected."""
-        logger = ScarfEventLogger(api_key="test-api-key")
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
 
         invalid_properties = [
             ({'list': [1, 2, 3]}, "list"),
@@ -85,12 +93,12 @@ class TestScarfEventLogger(unittest.TestCase):
         mock_response.status_code = 200
         mock_session.return_value.post.return_value = mock_response
 
-        logger = ScarfEventLogger(api_key="test-api-key")
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
         result = logger.log_event({})
 
         self.assertTrue(result)
         mock_session.return_value.post.assert_called_with(
-            'https://scarf.sh/api/v1',
+            self.DEFAULT_ENDPOINT,
             params={},
             timeout=3.0
         )
@@ -100,13 +108,13 @@ class TestScarfEventLogger(unittest.TestCase):
         """Test that requests timeout after the specified duration."""
         mock_session.return_value.post.side_effect = Timeout("Request timed out")
 
-        logger = ScarfEventLogger(api_key="test-api-key", timeout=1)
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT, timeout=1)
 
         with self.assertRaises(Timeout):
             logger.log_event({"event": "test"})
 
         mock_session.return_value.post.assert_called_with(
-            'https://scarf.sh/api/v1',
+            self.DEFAULT_ENDPOINT,
             params={"event": "test"},
             timeout=1
         )
@@ -118,12 +126,12 @@ class TestScarfEventLogger(unittest.TestCase):
         mock_response.status_code = 200
         mock_session.return_value.post.return_value = mock_response
 
-        logger = ScarfEventLogger(api_key="test-api-key", timeout=3.0)
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT, timeout=3.0)
         result = logger.log_event({"event": "test"}, timeout=1.0)
 
         self.assertTrue(result)
         mock_session.return_value.post.assert_called_with(
-            'https://scarf.sh/api/v1',
+            self.DEFAULT_ENDPOINT,
             params={"event": "test"},
             timeout=1.0
         )
@@ -185,13 +193,13 @@ class TestScarfEventLogger(unittest.TestCase):
 
         for value, should_send in test_cases:
             os.environ['DO_NOT_TRACK'] = value
-            logger = ScarfEventLogger(api_key="test-api-key")
+            logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
             result = logger.log_event(test_properties)
 
             if should_send:
                 self.assertTrue(result)
                 mock_session.return_value.post.assert_called_with(
-                    'https://scarf.sh/api/v1',
+                    self.DEFAULT_ENDPOINT,
                     params=test_properties,
                     timeout=3.0
                 )
@@ -223,13 +231,13 @@ class TestScarfEventLogger(unittest.TestCase):
 
         for value, should_send in test_cases:
             os.environ['SCARF_NO_ANALYTICS'] = value
-            logger = ScarfEventLogger(api_key="test-api-key")
+            logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
             result = logger.log_event(test_properties)
 
             if should_send:
                 self.assertTrue(result)
                 mock_session.return_value.post.assert_called_with(
-                    'https://scarf.sh/api/v1',
+                    self.DEFAULT_ENDPOINT,
                     params=test_properties,
                     timeout=3.0
                 )
@@ -250,7 +258,7 @@ class TestScarfEventLogger(unittest.TestCase):
 
         os.environ['DO_NOT_TRACK'] = 'false'
         os.environ['SCARF_NO_ANALYTICS'] = 'true'
-        logger = ScarfEventLogger(api_key="test-api-key")
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
 
         result = logger.log_event({'event': 'test'})
         self.assertFalse(result)
@@ -269,23 +277,23 @@ class TestScarfEventLogger(unittest.TestCase):
         mock_session.return_value.post.side_effect = mock_post
 
         # Should timeout (1s timeout, requires 2s)
-        logger = ScarfEventLogger(api_key="test-api-key", timeout=1)
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT, timeout=1)
         with self.assertRaises(ReadTimeout):
             logger.log_event({"event": "test"})
 
         # Should succeed (3s timeout, requires 2s)
-        logger = ScarfEventLogger(api_key="test-api-key", timeout=3)
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT, timeout=3)
         result = logger.log_event({"event": "test"})
         self.assertTrue(result)
 
         # Should timeout with per-request override (3s default, 1s override)
-        logger = ScarfEventLogger(api_key="test-api-key", timeout=3)
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT, timeout=3)
         with self.assertRaises(ReadTimeout):
             logger.log_event({"event": "test"}, timeout=1)
 
         # Verify the last timeout value was passed correctly
         mock_session.return_value.post.assert_called_with(
-            'https://scarf.sh/api/v1',
+            self.DEFAULT_ENDPOINT,
             params={"event": "test"},
             timeout=1
         )

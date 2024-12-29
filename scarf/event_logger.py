@@ -14,34 +14,25 @@ class ScarfEventLogger:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
+        endpoint_url: str,
         timeout: Optional[float] = None,
     ):
         """Initialize the Scarf event logger.
 
         Args:
-            api_key: Your Scarf API key (optional, defaults to SCARF_API_KEY env var)
-            base_url: The base URL for the Scarf API (optional, defaults to SCARF_BASE_URL env var)
+            endpoint_url: The endpoint URL for the Scarf API
             timeout: Default timeout in seconds for API calls (optional, default: 3.0)
 
         Raises:
-            ValueError: If neither api_key parameter nor SCARF_API_KEY env var is set
+            ValueError: If endpoint_url is not provided or is empty
         """
-        self.api_key = api_key or os.environ.get('SCARF_API_KEY')
-        if not self.api_key:
-            raise ValueError(
-                "API key must be provided either through api_key parameter "
-                "or SCARF_API_KEY environment variable"
-            )
+        if not endpoint_url:
+            raise ValueError("endpoint_url must be provided")
 
-        self.base_url = (
-            base_url or os.environ.get('SCARF_BASE_URL', "https://scarf.sh/api/v1")
-        ).rstrip('/')
+        self.endpoint_url = endpoint_url.rstrip('/')
         self.timeout = timeout if timeout is not None else self.DEFAULT_TIMEOUT
         self.session = requests.Session()
         self.session.headers.update({
-            'Authorization': f'Bearer {self.api_key}',
             'User-Agent': f'scarf-py/{__version__}'
         })
 
@@ -105,7 +96,7 @@ class ScarfEventLogger:
             self._validate_properties(properties)
 
         response = self.session.post(
-            self.base_url,
+            self.endpoint_url,
             params=properties,
             timeout=timeout if timeout is not None else self.timeout
         )

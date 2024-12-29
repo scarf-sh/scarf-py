@@ -1,6 +1,6 @@
-# Scarf-py
+# scarf-py
 
-Python bindings for [Scarf](https://scarf.sh) telemetry. This package provides a simple and ergonomic way to send telemetry events to Scarf.
+A Python client for sending telemetry events to Scarf.
 
 ## Installation
 
@@ -13,57 +13,55 @@ pip install scarf
 ```python
 from scarf import ScarfEventLogger
 
-# Initialize the logger with your API key and optional timeout
+# Initialize with required endpoint URL
 logger = ScarfEventLogger(
-    api_key="your-api-key",
-    base_url="https://your-scarf-endpoint.com/your-endpoint-id",
-    timeout=3.0  # Optional: default timeout of 3 seconds
+    endpoint_url="https://your-scarf-endpoint.com",
+    timeout=5.0  # Optional: Set default timeout in seconds (default: 3.0)
 )
 
-# Log an event with properties
-logger.log_event({
+# Send an event with properties
+success = logger.log_event({
     "event": "package_download",
-    "version": "1.0.0",
-    "platform": "linux"
+    "package": "scarf",
+    "version": "1.0.0"
 })
 
-# Log a simple event with no properties
-logger.log_event({})
-
-# Log an event with a custom timeout
-logger.log_event(
-    {"event": "slow_operation"},
-    timeout=5.0  # Override timeout for this specific call
+# Send an event with a custom timeout
+success = logger.log_event(
+    properties={"event": "custom_event"},
+    timeout=1.0  # Override default timeout for this call
 )
+
+# Empty properties are allowed
+success = logger.log_event({})
 ```
 
-## API Reference
+## Configuration
 
-### ScarfEventLogger
+The client can be configured through environment variables:
 
-#### `__init__(api_key: str, base_url: str = "https://api.scarf.sh/api/v1", timeout: Optional[float] = None)`
+- `DO_NOT_TRACK=1`: Disable analytics
+- `SCARF_NO_ANALYTICS=1`: Disable analytics (alternative)
 
-Initialize a new Scarf event logger.
+## Features
 
-- `api_key`: Your Scarf API key
-- `base_url`: The base URL for the Scarf API (optional)
-- `timeout`: Default timeout in seconds for API calls (optional, default: 3.0)
+- Simple API for sending telemetry events
+- Environment variable configuration
+- Configurable timeouts (default: 3 seconds)
+- Automatically reespects Do Not Track settings
 
-#### `log_event(properties: Dict[str, Any], timeout: Optional[float] = None) -> Optional[Dict[str, Any]]`
+## Development
 
-Log a telemetry event to Scarf.
-
-- `properties`: Dictionary of properties to include with the event. All values must be simple types (str, int, float, bool, None).
-- `timeout`: Optional timeout in seconds for this specific API call. Overrides the default timeout set in the constructor.
-
-Returns the response from the Scarf API as a dictionary. Returns None if analytics are disabled via environment variables.
-
-### Environment Variables
-
-Analytics can be disabled by setting either of these environment variables:
-- `DO_NOT_TRACK=1` or `DO_NOT_TRACK=true`
-- `SCARF_NO_ANALYTICS=1` or `SCARF_NO_ANALYTICS=true`
+1. Clone the repository
+2. Install development dependencies:
+   ```bash
+   pip install -e ".[dev]"
+   ```
+3. Run tests:
+   ```bash
+   pytest
+   ```
 
 ## License
 
-Apache 2.0
+MIT
