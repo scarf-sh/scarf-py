@@ -81,7 +81,7 @@ class ScarfEventLogger:
         self,
         properties: Dict[str, Any],
         timeout: Optional[float] = None,
-    ) -> Optional[bool]:
+    ) -> bool:
         """Log a telemetry event to Scarf.
 
         Args:
@@ -92,20 +92,20 @@ class ScarfEventLogger:
                 Overrides the default timeout set in the constructor.
 
         Returns:
-            True if the event was sent successfully, None if analytics are disabled
+            True if the event was sent successfully, False if analytics are disabled
 
         Raises:
             ValueError: If any property value is not a simple type
             requests.exceptions.RequestException: If the request fails or times out
         """
         if self._check_do_not_track():
-            return None
+            return False
 
         if properties:
             self._validate_properties(properties)
 
         response = self.session.post(
-            f'{self.base_url}',
+            self.base_url,
             params=properties,
             timeout=timeout if timeout is not None else self.timeout
         )

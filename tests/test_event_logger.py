@@ -82,7 +82,7 @@ class TestScarfEventLogger(unittest.TestCase):
     def test_empty_properties_allowed(self, mock_session):
         """Test that empty properties dictionary is allowed."""
         mock_response = MagicMock()
-        mock_response.json.return_value = {"status": "success"}
+        mock_response.status_code = 200
         mock_session.return_value.post.return_value = mock_response
 
         logger = ScarfEventLogger(api_key="test-api-key")
@@ -115,7 +115,7 @@ class TestScarfEventLogger(unittest.TestCase):
     def test_request_timeout_override(self, mock_session):
         """Test that per-request timeout overrides the default."""
         mock_response = MagicMock()
-        mock_response.json.return_value = {"status": "success"}
+        mock_response.status_code = 200
         mock_session.return_value.post.return_value = mock_response
 
         logger = ScarfEventLogger(api_key="test-api-key", timeout=3.0)
@@ -169,35 +169,35 @@ class TestScarfEventLogger(unittest.TestCase):
         """Test that DO_NOT_TRACK environment variable disables analytics."""
         # Setup mock response
         mock_response = MagicMock()
-        mock_response.json.return_value = {"status": "success"}
+        mock_response.status_code = 200
         mock_session.return_value.post.return_value = mock_response
 
         test_cases = [
-            ('1', True),
-            ('true', True),
-            ('TRUE', True),
-            ('0', False),
-            ('false', False),
-            ('', False),
+            ('1', False),
+            ('true', False),
+            ('TRUE', False),
+            ('0', True),
+            ('false', True),
+            ('', True),
         ]
 
         test_properties = {'event': 'test', 'value': 42}
 
-        for value, expected in test_cases:
+        for value, should_send in test_cases:
             os.environ['DO_NOT_TRACK'] = value
             logger = ScarfEventLogger(api_key="test-api-key")
             result = logger.log_event(test_properties)
 
-            if expected:
-                self.assertIsNone(result)
-                mock_session.return_value.post.assert_not_called()
-            else:
+            if should_send:
                 self.assertTrue(result)
                 mock_session.return_value.post.assert_called_with(
                     'https://scarf.sh/api/v1',
                     params=test_properties,
                     timeout=3.0
                 )
+            else:
+                self.assertFalse(result)
+                mock_session.return_value.post.assert_not_called()
 
             # Reset mock for next iteration
             mock_session.return_value.post.reset_mock()
@@ -207,35 +207,35 @@ class TestScarfEventLogger(unittest.TestCase):
         """Test that SCARF_NO_ANALYTICS environment variable disables analytics."""
         # Setup mock response
         mock_response = MagicMock()
-        mock_response.json.return_value = {"status": "success"}
+        mock_response.status_code = 200
         mock_session.return_value.post.return_value = mock_response
 
         test_cases = [
-            ('1', True),
-            ('true', True),
-            ('TRUE', True),
-            ('0', False),
-            ('false', False),
-            ('', False),
+            ('1', False),
+            ('true', False),
+            ('TRUE', False),
+            ('0', True),
+            ('false', True),
+            ('', True),
         ]
 
         test_properties = {'event': 'test', 'value': 42}
 
-        for value, expected in test_cases:
+        for value, should_send in test_cases:
             os.environ['SCARF_NO_ANALYTICS'] = value
             logger = ScarfEventLogger(api_key="test-api-key")
             result = logger.log_event(test_properties)
 
-            if expected:
-                self.assertIsNone(result)
-                mock_session.return_value.post.assert_not_called()
-            else:
+            if should_send:
                 self.assertTrue(result)
                 mock_session.return_value.post.assert_called_with(
                     'https://scarf.sh/api/v1',
                     params=test_properties,
                     timeout=3.0
                 )
+            else:
+                self.assertFalse(result)
+                mock_session.return_value.post.assert_not_called()
 
             # Reset mock for next iteration
             mock_session.return_value.post.reset_mock()
@@ -245,7 +245,7 @@ class TestScarfEventLogger(unittest.TestCase):
         """Test that either environment variable can disable analytics."""
         # Setup mock response
         mock_response = MagicMock()
-        mock_response.json.return_value = {"status": "success"}
+        mock_response.status_code = 200
         mock_session.return_value.post.return_value = mock_response
 
         os.environ['DO_NOT_TRACK'] = 'false'
@@ -253,7 +253,7 @@ class TestScarfEventLogger(unittest.TestCase):
         logger = ScarfEventLogger(api_key="test-api-key")
 
         result = logger.log_event({'event': 'test'})
-        self.assertIsNone(result)
+        self.assertFalse(result)
         mock_session.return_value.post.assert_not_called()
 
     @patch('requests.Session')
@@ -263,7 +263,7 @@ class TestScarfEventLogger(unittest.TestCase):
             if kwargs.get('timeout', float('inf')) < 2:
                 raise ReadTimeout("Request timed out")
             mock_response = MagicMock()
-            mock_response.json.return_value = {"status": "success"}
+            mock_response.status_code = 200
             return mock_response
 
         mock_session.return_value.post.side_effect = mock_post
