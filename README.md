@@ -64,4 +64,4 @@ The client can be configured through environment variables:
 
 ## License
 
-MIT
+Apache 2.0
