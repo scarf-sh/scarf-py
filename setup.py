@@ -1,11 +1,22 @@
+import os
+import re
 from setuptools import find_packages, setup
 
+# Read version from pyproject.toml
+with open("pyproject.toml", "r", encoding="utf-8") as f:
+    content = f.read()
+    version_match = re.search(r'version\s*=\s*"(.*?)"', content)
+    if not version_match:
+        raise ValueError("Could not find version string in pyproject.toml")
+    VERSION = version_match.group(1)
+
+# Read README
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name="scarf-sdk",
-    version="0.1.1",
+    version=VERSION,
     author="Scarf",
     author_email="engineering@scarf.sh",
     description="Python bindings for Scarf telemetry",

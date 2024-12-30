@@ -1,11 +1,12 @@
 import os
 import re
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from requests.exceptions import ReadTimeout, Timeout
 
-from scarf import ScarfEventLogger
+from scarf import ScarfEventLogger, __version__
 
 
 class TestScarfEventLogger(unittest.TestCase):
@@ -369,6 +370,26 @@ class TestScarfEventLogger(unittest.TestCase):
         mock_print.assert_any_call("  Status: 200")
         mock_print.assert_any_call("  URL: https://scarf.sh/api/v1")
         mock_print.assert_any_call("  Body: Success")
+
+    def test_version_consistency(self):
+        """Test that version is consistent with pyproject.toml."""
+        # Read version from pyproject.toml
+        pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+        with open(pyproject_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            version_match = re.search(r'version\s*=\s*"(.*?)"', content)
+            self.assertIsNotNone(version_match, "Could not find version in pyproject.toml")
+            version = version_match.group(1)
+
+        # Check that __version__ matches
+        self.assertEqual(__version__, version)
+
+        # Check that User-Agent header uses correct version
+        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
+        self.assertEqual(
+            logger.session.headers['User-Agent'],
+            f'scarf-py/{version}'
+        )
 
 if __name__ == '__main__':
     unittest.main()
