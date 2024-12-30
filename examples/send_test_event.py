@@ -23,7 +23,7 @@ def main():
     try:
         # Initialize the logger with a test endpoint and verbose mode
         logger = ScarfEventLogger(
-            endpoint_url="https://avi.gateway.scarf.sh/test-scarf-py",
+            endpoint_url="https://scarf.gateway.scarf.sh/scarf-py",
             verbose=True  # Enable verbose logging
         )
 

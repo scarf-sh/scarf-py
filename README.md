@@ -1,5 +1,7 @@
 # scarf-py
 
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=337d6c89-63ff-4430-865b-2b0dd211eb0c" />
+
 A Python client for sending telemetry events to Scarf.
 
 ## Installation
