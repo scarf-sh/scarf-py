@@ -1,7 +1,7 @@
 """Version information."""
-import os
 import re
 from pathlib import Path
+
 
 def get_version() -> str:
     """Get version from pyproject.toml."""
