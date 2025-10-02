@@ -39,8 +39,34 @@ class ScarfEventLogger:
             else os.environ.get('SCARF_VERBOSE', '').lower() in ('1', 'true')
         )
         self.session = requests.Session()
+        # Build extended User-Agent with platform, arch, and Python version
+        try:
+            import platform as _platform
+            import sys as _sys
+
+            system = _platform.system()
+            if system == 'Darwin':
+                platform_name = 'macOS'
+            elif system == 'Linux':
+                platform_name = 'linux'
+            elif system == 'Windows':
+                platform_name = 'windows'
+            else:
+                platform_name = system.lower() or 'unknown'
+
+            arch = _platform.machine() or 'unknown'
+            pyver = _platform.python_version() if hasattr(_platform, 'python_version') else (
+                f"{_sys.version_info.major}.{_sys.version_info.minor}.{_sys.version_info.micro}"
+            )
+
+            extra = f" (platform={platform_name}; arch={arch}, python={pyver})"
+        except Exception:
+            # In case of any unexpected failure retrieving platform info,
+            # fall back to just the base user agent string.
+            extra = ""
+
         self.session.headers.update({
-            'User-Agent': f'scarf-py/{__version__}'
+            'User-Agent': f'scarf-py/{__version__}' + extra
         })
 
         if self.verbose:
