@@ -1,6 +1,6 @@
 [project]
 name = "scarf-sdk"
-version = "0.1.2"
+version = "0.1.3"
 description = "Python bindings for Scarf telemetry"
 authors = [
     { name="Scarf Engineering", email="engineering@scarf.sh" }
