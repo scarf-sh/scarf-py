@@ -384,12 +384,16 @@ class TestScarfEventLogger(unittest.TestCase):
         # Check that __version__ matches
         self.assertEqual(__version__, version)
 
-        # Check that User-Agent header uses correct version
+        # Check that User-Agent header uses correct version and includes platform info
         logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
-        self.assertEqual(
-            logger.session.headers['User-Agent'],
-            f'scarf-py/{version}'
+        ua = logger.session.headers['User-Agent']
+        self.assertTrue(ua.startswith(f'scarf-py/{version}'))
+        # Expect appended details like: (platform=...; arch=..., python=...)
+        pattern = (
+            r"^scarf-py/" + re.escape(version) +
+            r" \(platform=[^;]+; arch=[^,]+, python=\d+\.\d+\.\d+\)$"
         )
+        self.assertRegex(ua, pattern)
 
 if __name__ == '__main__':
     unittest.main()
