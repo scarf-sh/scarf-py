@@ -389,7 +389,11 @@ class TestScarfEventLogger(unittest.TestCase):
         ua = logger.session.headers['User-Agent']
         self.assertTrue(ua.startswith(f'scarf-py/{version}'))
         # Expect appended details like: (platform=...; arch=..., python=...)
-        self.assertRegex(ua, r"^scarf-py/" + re.escape(version) + r" \(platform=[^;]+; arch=[^,]+, python=\d+\.\d+\.\d+\)$")
+        pattern = (
+            r"^scarf-py/" + re.escape(version) +
+            r" \(platform=[^;]+; arch=[^,]+, python=\d+\.\d+\.\d+\)$"
+        )
+        self.assertRegex(ua, pattern)
 
 if __name__ == '__main__':
     unittest.main()
