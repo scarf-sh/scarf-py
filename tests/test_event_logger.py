@@ -84,35 +84,31 @@ class TestScarfEventLogger(unittest.TestCase):
         logger = ScarfEventLogger(endpoint_url=custom_url)
         self.assertEqual(logger.endpoint_url, custom_url)
 
-    def test_validate_properties_simple_types(self):
-        """Test that simple type properties are accepted."""
+    @patch('requests.Session')
+    def test_nested_properties_allowed(self, mock_session):
+        """Test that nested JSON properties are accepted."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_session.return_value.post.return_value = mock_response
+
         logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
 
-        # These should not raise any errors
-        logger._validate_properties({
-            'string': 'value',
-            'integer': 42,
-            'float': 3.14,
-            'bool': True,
-            'none': None
-        })
+        nested_props = {
+            'event': 'download',
+            'details': {
+                'versions': ['1.0.0', '1.1.0'],
+                'meta': {'platform': 'linux'}
+            }
+        }
 
-    def test_validate_properties_complex_types(self):
-        """Test that complex type properties are rejected."""
-        logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
+        result = logger.log_event(nested_props)
 
-        invalid_properties = [
-            ({'list': [1, 2, 3]}, "list"),
-            ({'dict': {'key': 'value'}}, "dict"),
-            ({'tuple': (1, 2)}, "tuple"),
-            ({'set': {1, 2}}, "set"),
-        ]
-
-        for props, key in invalid_properties:
-            with self.assertRaises(ValueError) as cm:
-                logger._validate_properties(props)
-            self.assertIn(key, str(cm.exception))
-            self.assertIn("simple types are allowed", str(cm.exception))
+        self.assertTrue(result)
+        mock_session.return_value.post.assert_called_with(
+            self.DEFAULT_ENDPOINT,
+            json=nested_props,
+            timeout=3.0
+        )
 
     @patch('requests.Session')
     def test_empty_properties_allowed(self, mock_session):
@@ -127,7 +123,7 @@ class TestScarfEventLogger(unittest.TestCase):
         self.assertTrue(result)
         mock_session.return_value.post.assert_called_with(
             self.DEFAULT_ENDPOINT,
-            params={},
+            json={},
             timeout=3.0
         )
 
@@ -143,7 +139,7 @@ class TestScarfEventLogger(unittest.TestCase):
 
         mock_session.return_value.post.assert_called_with(
             self.DEFAULT_ENDPOINT,
-            params={"event": "test"},
+            json={"event": "test"},
             timeout=1
         )
 
@@ -160,7 +156,7 @@ class TestScarfEventLogger(unittest.TestCase):
         self.assertTrue(result)
         mock_session.return_value.post.assert_called_with(
             self.DEFAULT_ENDPOINT,
-            params={"event": "test"},
+            json={"event": "test"},
             timeout=1.0
         )
 
@@ -228,7 +224,7 @@ class TestScarfEventLogger(unittest.TestCase):
                 self.assertTrue(result)
                 mock_session.return_value.post.assert_called_with(
                     self.DEFAULT_ENDPOINT,
-                    params=test_properties,
+                    json=test_properties,
                     timeout=3.0
                 )
             else:
@@ -266,7 +262,7 @@ class TestScarfEventLogger(unittest.TestCase):
                 self.assertTrue(result)
                 mock_session.return_value.post.assert_called_with(
                     self.DEFAULT_ENDPOINT,
-                    params=test_properties,
+                    json=test_properties,
                     timeout=3.0
                 )
             else:
@@ -322,7 +318,7 @@ class TestScarfEventLogger(unittest.TestCase):
         # Verify the last timeout value was passed correctly
         mock_session.return_value.post.assert_called_with(
             self.DEFAULT_ENDPOINT,
-            params={"event": "test"},
+            json={"event": "test"},
             timeout=1
         )
 
