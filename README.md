@@ -3,7 +3,7 @@
 ![PyPI - Version](https://img.shields.io/pypi/v/scarf-sdk)
 <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=337d6c89-63ff-4430-865b-2b0dd211eb0c" />
 
-A Python client for sending telemetry events to Scarf.
+A Python client for sending telemetry events to Scarf using JSON payloads.
 
 ## Installation
 
@@ -26,7 +26,10 @@ logger = ScarfEventLogger(
 success = logger.log_event({
     "event": "package_download",
     "package": "scarf",
-    "version": "1.0.0"
+    "details": {
+        "version": "1.0.0",
+        "platforms": ["linux", "macos"]
+    }
 })
 
 # Send an event with a custom timeout
@@ -50,6 +53,7 @@ The client can be configured through environment variables:
 ## Features
 
 - Simple API for sending telemetry events
+- JSON payloads (supports nested data)
 - Environment variable configuration
 - Configurable timeouts (default: 3 seconds)
 - Respects user Do Not Track settings
