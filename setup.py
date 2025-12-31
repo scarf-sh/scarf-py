@@ -1,6 +1,6 @@
 import re
 
-from setuptools import find_packages, setup
+from setuptools import setup
 
 # Read version from pyproject.toml
 with open("pyproject.toml", "r", encoding="utf-8") as f:
@@ -23,7 +23,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/scarf-sh/scarf-py",
-    packages=find_packages(),
+    packages=["scarf"],
     python_requires=">=3.7",
     install_requires=[
         "requests>=2.25.0",
