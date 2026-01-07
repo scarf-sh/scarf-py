@@ -384,10 +384,10 @@ class TestScarfEventLogger(unittest.TestCase):
         logger = ScarfEventLogger(endpoint_url=self.DEFAULT_ENDPOINT)
         ua = logger.session.headers['User-Agent']
         self.assertTrue(ua.startswith(f'scarf-py/{version}'))
-        # Expect appended details like: (platform=...; arch=..., python=...)
+        # Expect appended details like: (platform=...; arch=...; python=...)
         pattern = (
             r"^scarf-py/" + re.escape(version) +
-            r" \(platform=[^;]+; arch=[^,]+, python=\d+\.\d+\.\d+\)$"
+            r" \(platform=[^;]+; arch=[^;]+; python=\d+\.\d+\.\d+\)$"
         )
         self.assertRegex(ua, pattern)
 

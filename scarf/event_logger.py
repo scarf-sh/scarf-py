@@ -58,7 +58,7 @@ class ScarfEventLogger:
                 f"{_sys.version_info.major}.{_sys.version_info.minor}.{_sys.version_info.micro}"
             )
 
-            extra = f" (platform={platform_name}; arch={arch}, python={pyver})"
+            extra = f" (platform={platform_name}; arch={arch}; python={pyver})"
         except Exception:
             # In case of any unexpected failure retrieving platform info,
             # fall back to just the base user agent string.
